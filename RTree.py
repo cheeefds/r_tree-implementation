@@ -44,9 +44,9 @@ class RTree:
 
         if leafnode.children_count > self.maxentries:
             
-            L, LL = self.split_node(leafnode)
-            leafnode.children = L.children
-            leafnode.children_count = L.children_count
+            LL = self.split_node(leafnode)
+            # leafnode.children = L.children.copy()
+            # leafnode.children_count = L.children_count
             # for e in L.children:
             #     print(e.mbr,"L")
             # for e in LL.children:
@@ -61,32 +61,39 @@ class RTree:
     def split_node(self, node):
 
         entry1, entry2 = PickSeeds(node)
+        
+        remaining = [e for e in node.children if e != entry1 and e != entry2]
 
-        g1 = self.create_node(node.is_leaf, node.parent)
-        g2 = self.create_node(node.is_leaf, node.parent)
 
-        g1.children.append(entry1)
-        g1.children_count += 1
+        
+        g2 = self.create_node(node.is_leaf, None)
+
+        node.children = [entry1]
+        node.children_count = 1
         g1mbr = entry1.mbr
 
         g2.children.append(entry2)
         g2.children_count += 1
         g2mbr = entry2.mbr
+        if entry2.child:
+            entry2.child.parent = g2
 
-        remaining = [e for e in node.children if e != entry1 and e != entry2]
+        
 
         while remaining:
 
-            if g1.children_count + len(remaining) == self.minentries:
+            if node.children_count + len(remaining) == self.minentries:
                 for e in remaining:
-                    g1.children.append(e)
-                    g1.children_count += 1
+                    node.children.append(e)
+                    node.children_count += 1
                 break
 
             if g2.children_count + len(remaining) == self.minentries:
                 for e in remaining:
                     g2.children.append(e)
                     g2.children_count += 1
+                    if e.child:
+                        e.child.parent = g2
                 break
 
             entry = PickNext(remaining, g1mbr, g2mbr)
@@ -95,7 +102,7 @@ class RTree:
             d2 = Enlargement(g2mbr, entry.mbr)
 
             if d1 < d2:
-                target = g1
+                target = node
                 g1mbr = union(g1mbr, entry.mbr)
 
             elif d2 < d1:
@@ -104,7 +111,7 @@ class RTree:
 
             else:
                 if area(g1mbr) < area(g2mbr):
-                    target = g1
+                    target = node
                     g1mbr = union(g1mbr, entry.mbr)
                 else:
                     target = g2
@@ -112,9 +119,11 @@ class RTree:
 
             target.children.append(entry)
             target.children_count += 1
+            if target == g2 and entry.child:
+                entry.child.parent = g2 
             remaining.remove(entry)
 
-        return g1, g2
+        return g2
 
 # -------------------------
     # Adjust Tree (依照您提供的邏輯修改)
@@ -146,8 +155,10 @@ class RTree:
 
         # 更新 P 中指向 N 的 entry 的 MBR
         Nmbr = self.compute_node_mbr(N)
+       
         for e in P.children:
             if e.child == N:
+                
                 e.mbr = Nmbr
                 break
 
@@ -161,10 +172,10 @@ class RTree:
 
             # If P > M (超過 maxentries):
             if P.children_count > self.maxentries:
-                P_split, PP_split = self.split_node(P)
-                P.children = P_split.children
-                P.children_count = P_split.children_count
-                # AdjustTree(P, PP)
+                PP_split = self.split_node(P)
+                # P.children = P_split.children.copy()
+                # P.children_count = P_split.children_count
+                # AdjustTree(P, PP)     
                 return self.AdjustTree(P, PP_split)
             else:
                 # Else: AdjustTree(P)
@@ -181,3 +192,18 @@ class RTree:
         for e in node.children[1:]:
             current_mbr = union(current_mbr, e.mbr)
         return current_mbr
+    
+
+    def print_tree(self, node=None, level=0):
+        if node is None:
+            node = self.root
+
+        print("  " * level,
+            "Node",
+            self.compute_node_mbr(node),
+            "leaf=", node.is_leaf)
+
+        for e in node.children:
+            print("  " * level, " Entry", e.mbr)
+            if e.child:
+                self.print_tree(e.child, level + 1)
