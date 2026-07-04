@@ -1,5 +1,6 @@
 from Nodes import Entry, Node
-from utils import area, Enlargement, union, PickSeeds, PickNext
+from utils import area, Enlargement, union, PickSeeds, PickNext,is_overlap
+from collections import deque
 
 
 class RTree:
@@ -207,3 +208,38 @@ class RTree:
             print("  " * level, " Entry", e.mbr)
             if e.child:
                 self.print_tree(e.child, level + 1)
+    
+
+    def Search(self,searchmbr):
+        
+        searchlist = deque()
+        FinalAnswer = []
+        node = self.root
+            
+        if node.children_count == 0:
+            return None
+
+        searchlist.append(node)
+
+        while searchlist:
+            temp = searchlist.popleft()
+            
+            if temp.is_leaf:
+                for e in temp.children:
+                    # print(e.mbr)
+                    if is_overlap(e.mbr,searchmbr):
+                        # print("overlap")
+                        FinalAnswer.append(e.data)
+                continue
+
+            for e in temp.children:
+                # print(e.mbr)
+                if is_overlap(e.mbr,searchmbr):
+                    # print("overlap")
+                    searchlist.append(e.child)
+
+        return FinalAnswer
+
+
+    
+        

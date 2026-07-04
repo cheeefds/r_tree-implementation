@@ -37,3 +37,10 @@ def PickNext(remaining_children,g1mbr,g2mbr):
             Maxd = d
             NextSeed = remaining_children[i]
     return NextSeed
+
+def is_overlap(mbr,searchmbr):
+    
+        if mbr[0] > searchmbr[1] or mbr[1] < searchmbr[0] or mbr[2] > searchmbr[3] or mbr[3] < searchmbr[2]:
+            return False
+        
+        return True
