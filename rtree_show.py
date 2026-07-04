@@ -27,4 +27,4 @@ def show_rtree_mbr(root,level = 0):
     for entry in root.children:
         if entry.child is not None:
             show_rtree_mbr(entry.child, level + 1)
-    
+
